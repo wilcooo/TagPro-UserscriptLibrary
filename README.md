@@ -6,7 +6,7 @@ To use this library, include the next line in your userscripts' metadata block:
 `// @require      https://github.com/wilcooo/TagPro-UserscriptLibrary/raw/master/tpul.lib.js`
 
 
-Add a settings button:
+##Add a settings button:
 
 `tpul.settings.addButton( onclick, name, imageURL )`
 
