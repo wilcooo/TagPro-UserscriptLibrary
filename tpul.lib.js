@@ -1,21 +1,28 @@
 // ==UserScript==
+// @name         TagPro Userscript Library
+// @description  Functions that any TagPro script could benefit from
+// @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
+// @version      1.0
+// @license      MIT
 // @include      *.koalabeast.com*
 // @include      *.jukejuice.com*
 // @include      *.newcompte.fr*
-// @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
 // @downloadURL  https://raw.githubusercontent.com/wilcooo/TagPro-UserscriptLibrary/master/tpul.lib.js
 // @icon         https://raw.githubusercontent.com/wilcooo/TagPro-UserscriptLibrary/master/icon.png
 // @supportURL   https://www.reddit.com/message/compose/?to=Wilcooo
+// ==/UserScript==
+
+
 
 // ==UserLibrary==
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
 // @version      1.0
 // @license      MIT
-
-// ==/UserScript==
-
 // ==/UserLibrary==
+
+
+
 
 
 /*
