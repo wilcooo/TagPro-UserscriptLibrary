@@ -2,7 +2,7 @@
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
 // @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
-// @version      1.1
+// @version      1.2
 // @license      MIT
 // @include      *.koalabeast.com*
 // @include      *.jukejuice.com*
@@ -227,7 +227,7 @@ overflow:hidden !important;
     var tpul = {
 
         settings: {
-            addSettings: function({id, title, fields, imageURL, tooltipText, buttonText}) {
+            addSettings: function({id, title, fields, icon, tooltipText, buttonText}) {
 
                 if (!GM_storage && !id) throw "TPUL: Please @grant GM_setValue and GM_getValue in your userscripts metadata!";
                 else if (!GM_storage) console.error("TPUL: Please @grant GM_setValue and GM_getValue in your userscripts metadata!");
@@ -286,7 +286,7 @@ overflow:hidden !important;
                 // Create a button using the function below
                 var button = tpul.settings.addButton({
                     onclick: ()=>settings.open(),
-                    imageURL: imageURL,
+                    icon: icon,
                     tooltipText: tooltipText,
                     buttonText: buttonText,
                 });
@@ -301,7 +301,7 @@ overflow:hidden !important;
                 return settings;
 
             },
-            addButton: function({onclick, imageURL, tooltipText, buttonText}) {
+            addButton: function({onclick, icon, tooltipText, buttonText}) {
 
                 if (!SettingsMenu) {
                     console.error('TPUL: Could not find a place to add the settings button for '+name);
@@ -311,9 +311,9 @@ overflow:hidden !important;
                 var button = document.createElement('button');
                 button.className = 'btn tpul-settings-btn';
 
-                if (imageURL) {
-                    if (imageURL.search(/^url\((.*)\)$/) == -1) imageURL = 'url("'+imageURL+'")';
-                    button.style.backgroundImage = imageURL;
+                if (icon) {
+                    if (icon.search(/^url\((.*)\)$/) == -1) icon = 'url("'+icon+'")';
+                    button.style.backgroundImage = icon;
                     button.innerHTML = '&nbsp;';
                 } else button.innerText = buttonText || '?';
 
