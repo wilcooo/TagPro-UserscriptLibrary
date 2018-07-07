@@ -1,9 +1,11 @@
 # TagPro-UserscriptLibrary
 Functions that any TagPro script could benefit from
 
-To use this library, include the next line in your userscripts' metadata block:
+To use this library, include these lines in your userscripts' metadata block:
 
-`// @require      https://github.com/wilcooo/TagPro-UserscriptLibrary/raw/master/tpul.lib.js`
+    // @require      https://github.com/wilcooo/TagPro-UserscriptLibrary/raw/master/tpul.lib.js
+    // @grant        GM_setValue
+    // @grant        GM_getValue
 
 
 ## Add a settings button:
