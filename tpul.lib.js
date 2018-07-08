@@ -2,7 +2,7 @@
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
 // @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
-// @version      1.3
+// @version      1.4
 // @license      MIT
 // @include      *.koalabeast.com*
 // @include      *.jukejuice.com*
@@ -10,6 +10,8 @@
 // @downloadURL  https://raw.githubusercontent.com/wilcooo/TagPro-UserscriptLibrary/master/tpul.lib.js
 // @icon         https://raw.githubusercontent.com/wilcooo/TagPro-UserscriptLibrary/master/icon.png
 // @supportURL   https://www.reddit.com/message/compose/?to=Wilcooo
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 
@@ -57,6 +59,15 @@
 
 
 console.log('Loading TPUL (TagPro Userscript Library)');
+
+
+/* TODO:
+
+- Style
+
+*/
+
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -126,7 +137,7 @@ radios.length;i<len;++i)if(radios[i].value==this["default"])radios[i].checked=tr
 ////////////////////////////////////////////////////////////////
 
 
-var tpul = (function(){
+var tpul = unsafeWindow.tpul || (function(){
 
 
 
@@ -144,10 +155,9 @@ var tpul = (function(){
 
     // THE SETTINGS MENU BUTTONS
 
-    styleSheet.insertRule(` #tpul-settings {
-width: 80%;
-margin: auto;
+    styleSheet.insertRule(` #tpul-settings-menu {
 text-align: center;
+margin: 0 10%;
 }`);
 
     styleSheet.insertRule(` .tpul-settings-btn {
@@ -240,10 +250,19 @@ margin: 10%;
 margin-top: 0;
 position: relative;
 padding: 20px;
+
 border: 1px solid #888;
+background: white;
+color: black;
 
 transition: top .5s;
 top: 100%;
+}`);
+
+    styleSheet.insertRule(` .tpul-settings-frame > div::after {
+content: "Sorry for the bad design, I'm working on it!";
+font-style: italic;
+color: gray;
 }`);
 
     styleSheet.insertRule(`.tpul-settings-shown .tpul-settings-frame        > div { top: 50%; }`);
@@ -404,6 +423,7 @@ overflow:hidden !important;
                     document.getElementById('options'); // Try to add it to the scoreboard in-game
 
                 if (container) {
+                    container.classList.remove('hidden');
                     container.appendChild(SettingsMenu);
                     return SettingsMenu;
                 }
