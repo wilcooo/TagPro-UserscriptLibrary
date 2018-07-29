@@ -28,7 +28,9 @@ In most cases, you want to provide a function that opens your scripts' settings.
 
 - `return value` - This function returns the GM_config settings object. Use `.get('fieldId')` to retrieve a setting's value. More info in the GM_config documentation.
 
-**Example**    `MySettings = tpul.settings.addSettings(
+**Example**    
+               
+                MySettings = tpul.settings.addSettings(
                 {
                   id: 'MyConfig', // A unique ID for your panel
                   fields: // Fields object
@@ -43,11 +45,11 @@ In most cases, you want to provide a function that opens your scripts' settings.
                   
                   title: 'My Userscript',
                   icon: 'https://github.com/wilcooo/TagPro-RespawnPizzas/raw/master/icon.png',
-                })`
+                })
                 
-                *Now you can read the 'Name' setting like this*
+*Now you can read the 'Name' setting like this*
                 
-                `MySettings.get('Name')`
+                MySettings.get('Name')
                 
 
 ## Add a settings button:
@@ -65,11 +67,13 @@ In most cases, you want to provide a function that opens your scripts' settings.
 
 - `return value` - This function returns the newly created button (which you probably don't need)
 
-**Example**    `tpul.settings.addButton( {
+**Example**    
+
+                tpul.settings.addButton( {
                     onclick: function(){ alert('pizzaaa'); },
                     icon: 'https://github.com/wilcooo/TagPro-RespawnPizzas/raw/master/icon.png',
                     tooltipText: 'Click me to show an alert!',
-                } );`
+                } );
 
 ## Profile settings
 
