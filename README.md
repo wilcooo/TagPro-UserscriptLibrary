@@ -6,6 +6,8 @@ To use this library, include these lines in your userscripts' metadata block:
     // @require      https://github.com/wilcooo/TagPro-UserscriptLibrary/raw/master/tpul.lib.js
     // @grant        GM_setValue
     // @grant        GM_getValue
+    // @grant        GM_xmlhttpRequest
+    // @connect      koalabeast.com
 
 ## Add a settings panel and button to open it:
 
