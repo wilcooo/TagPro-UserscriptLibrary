@@ -2,7 +2,7 @@
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
 // @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
-// @version      2.0
+// @version      2.1
 // @license      MIT
 // @include      *.koalabeast.com*
 // @include      *.jukejuice.com*
@@ -751,10 +751,6 @@ transform: translateY(100%);
                             } else {
                                 for (let el of SettingsFrame.getElementsByClassName('section_header')) el.classList.add('header-title');
                             }
-
-                            //Close all other settings (of other scripts)
-                            //This shouldn't be necessary, unless someone opens these settings via a non-conventional way
-                            for (var other of all_settings) if(other != this) other.close();
 
                             //Open the settings on our way (animated, blocking scroll of body etc.)
                             this.frame.style.display = '';
