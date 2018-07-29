@@ -494,6 +494,8 @@ padding: 4px .5em;
 }`);
 
 
+    /*
+    
     //Bad design notice:
 
     styleSheet.insertRule(` .tpul-settings-frame > div::after {
@@ -501,6 +503,8 @@ content: "Sorry for the bad design, I'm working on it!";
 font-style: italic;
 color: gray;
 }`);
+
+    */
 
     // Stop the body from scrolling when the settings panel is shown
     styleSheet.insertRule(`body.tpul-settings-shown {
