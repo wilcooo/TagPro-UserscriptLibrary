@@ -2,7 +2,7 @@
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
 // @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
-// @version      1.4
+// @version      2.0
 // @license      MIT
 // @include      *.koalabeast.com*
 // @include      *.jukejuice.com*
@@ -12,6 +12,8 @@
 // @supportURL   https://www.reddit.com/message/compose/?to=Wilcooo
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_xmlhttpRequest
+// @connect      koalabeast.com
 // ==/UserScript==
 
 
@@ -24,54 +26,42 @@
 // ==/UserLibrary==
 
 
-
-
-
-/*
-*
-* To use this library, include these lines in your userscripts' metadata block:
-
-// @require      https://github.com/wilcooo/TagPro-UserscriptLibrary/raw/master/tpul.lib.js
-// @grant        GM_setValue
-// @grant        GM_getValue
-
-*
-* Add a settings button:
-*
-* tpul.settings.addButton( onclick, name, icon )
-*
-*     - This creates a button on the scoreboard (when in-game)
-*         or on top of the page (on most of a TagPro servers' pages)
-*
-*     - 'onclick' will be called when the button gets clicked.
-*         In most cases, you want to provide a function that opens your scripts' settings.
-*
-*     - The image will be scaled to 64×64, so it is optimal to use that size
-*     - It is recommended to use an image related to your script,
-*         instead of a general settings icon.
-*
-*     - You can use a normal image url, or a base64 encoded image.
-*
-*     - This function returns the newly created button (which you probably don't need)
-*
-*
-*/
-
-
-console.log('Loading TPUL (TagPro Userscript Library)');
-
-
-/* TODO:
-
-- Style
-
-*/
-
+var version = 1.4;
+console.log('Loading TPUL (TagPro Userscript Library) version '+version);
 
 
 
 ////////////////////////////////////////////////////////////////
-//    START OF GM_CONFIG                                      //
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+// To use this library, include these 5 lines in your userscripts' metadata block:
+
+// @require      https://github.com/wilcooo/TagPro-UserscriptLibrary/raw/master/tpul.lib.js
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_xmlhttpRequest
+// @connect      koalabeast.com
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+var GM_configStruct = (function(){
+
+
+////////////////////////////////////////////////////////////////
+//    START OF ORIGINAL GM_CONFIG                             //
 ////////////////////////////////////////////////////////////////
 
 /*
@@ -132,13 +122,152 @@ num<0){alert(warn+".");return null}if(!this._checkNumberRange(num,warn))return n
 radios.length;i<len;++i)if(radios[i].value==this["default"])radios[i].checked=true;break;case "button":break;default:node.value=this["default"];break}},remove:function(el){GM_configStruct.prototype.remove(el||this.wrapper);this.wrapper=null;this.node=null},reload:function(){var wrapper=this.wrapper;if(wrapper){var fieldParent=wrapper.parentNode;fieldParent.insertBefore(this.wrapper=this.toNode(),wrapper);this.remove(wrapper)}},_checkNumberRange:function(num,warn){var field=this.settings;if(typeof field.min==
 "number"&&num<field.min){alert(warn+" greater than or equal to "+field.min+".");return null}if(typeof field.max=="number"&&num>field.max){alert(warn+" less than or equal to "+field.max+".");return null}return true}};var GM_config=new GM_configStruct;
 
+
 ////////////////////////////////////////////////////////////////
-//    END OF GM_CONFIG                                        //
+//    END OF ORIGINAL GM_CONFIG                               //
 ////////////////////////////////////////////////////////////////
 
 
-var tpul = unsafeWindow.tpul || (function(){
 
+
+    // I'm going to edit GM_config slightly.
+    // Mostly to get rid of the 'alerts' when something is wrong.
+    // (alerts pause the window, which causes you to disconnect from a game)
+
+
+    // This function will return true when no errors were found.
+
+    GM_configStruct.prototype.valid = function() {
+
+
+        for (var id in this.fields) {
+
+            var node = this.fields[id].node;
+
+            if (node.validity && !node.validity.valid) return false;
+
+            /*
+            var field = this.fields[id],
+                type = field.settings.type,
+                unsigned = false;
+
+            if (type.indexOf('unsigned ') == 0) {
+                type = type.substring(9);
+                unsigned = true;
+            }
+
+            if (['int','integer','float','number'].includes(type)) {
+
+                var num = Number(field.node.value);
+
+                var warn = 'Field labeled "' + field.label + '" expects a' +
+                    (unsigned ? ' positive ' : 'n ') + 'integer value';
+
+                if (isNaN(num) ||
+                    (type.substr(0, 3) == 'int' && Math.ceil(num) != Math.floor(num)) ||
+                    (unsigned && num < 0)) {
+                    // Add a few ways for scripters to know that there is an error
+                    field.error = true;
+                    field.wrapper.classList.add('error');
+                    correct = false;
+                }
+
+                else if (typeof field.settings.min == "number" && num < field.settings.min) {
+                    // Add a few ways for scripters to know that there is an error
+                    field.error = true;
+                    field.wrapper.classList.add('error');
+                    correct = false;
+                }
+
+                else if (typeof field.settings.max == "number" && num > field.settings.max) {
+                    // Add a few ways for scripters to know that there is an error
+                    field.error = true;
+                    field.wrapper.classList.add('error');
+                    correct = false;
+                }
+
+                else {
+                    // Add a few ways for scripters to know that there is NO error
+                    field.error = false;
+                    field.wrapper.classList.remove('error');
+                }
+            }*/
+        }
+
+        return true;
+    }
+
+
+    // Change the field prototype
+
+    var org_toNode = GM_configField.prototype.toNode;
+
+    GM_configField.prototype.toNode = function(){
+
+        var retNode = org_toNode.apply(this, ...arguments);
+
+        var unsigned = false,
+            type = this.settings.type;
+
+        if (type.indexOf('unsigned ') == 0) {
+            type = type.substring(9);
+            unsigned = true;
+        }
+
+        if (this.node.validity) {
+            // Validity checks will work for ANY input, not only numbers.
+            // For example, if you want a text field to have at least 3 characters,
+            // manually set the 'minLength' tag to 3 and the rest will be done
+            // automagically.
+
+            // Immediately show a validity report while typing / clicking
+            this.node.addEventListener('input', this.node.reportValidity);
+            this.node.addEventListener('click', this.node.reportValidity);
+
+            // The autocomplete covers the validity report (at least in Chrome)
+            this.node.autocomplete = 'off';
+        }
+
+        if (['int','integer','float','number'].includes(type)) {
+
+            // By default, GM_config makes most inputs a text field, even numbers.
+            // Lets fix that, to be able to check min and max values better.
+
+            this.node.type = 'number';
+
+            if (this.settings.min) this.node.min = this.settings.min;
+            if (this.settings.max) this.node.max = this.settings.max;
+
+            // unsigned means non-negative
+            if (unsigned) this.node.min = Math.max(0,this.settings.min);
+
+            // integers are only whole numbers
+            if (type.substr(0, 3) == 'int') this.node.step = 1;
+        }
+
+        if (!['radio','select','checkbox','button','hidden'].includes(type)) {
+            // Disable TagPro's controls when typing inside a field you can type in
+            // You can call tpul.rollingChat.enable() to make the Arrow keys move your ball, even when typing text.
+            this.node.addEventListener('focus', function(){tagpro.disableControls = true;});
+            this.node.addEventListener('blur', function(){tagpro.disableControls = false;});
+        }
+
+        return retNode;
+    }
+
+
+
+    return GM_configStruct;
+})();
+
+
+
+
+
+
+
+
+var tpul = (function(){
 
 
 
@@ -149,17 +278,24 @@ var tpul = unsafeWindow.tpul || (function(){
 
     // Create our own stylesheet to define the styles in:
 
-    var style = document.createElement('style');
+    var style = document.getElementById('tpul-style') || document.createElement('style');
     document.head.appendChild(style);
+    style.id = 'tpul-style';
+
+    // Remove all existing rules of any previous TPUL version.
+
     var styleSheet = style.sheet;
+    Array.from(styleSheet.cssRules).forEach(rule => styleSheet.deleteRule(rule))
 
     // THE SETTINGS MENU BUTTONS
 
+    // Container for settings buttons
     styleSheet.insertRule(` #tpul-settings-menu {
 text-align: center;
 margin: 0 10%;
 }`);
 
+    // A settings button
     styleSheet.insertRule(` .tpul-settings-btn {
 position: relative;
 width: 64px;
@@ -172,6 +308,7 @@ background-repeat: no-repeat !important;
 outline: none;
 }`);
 
+    // Blue line around button when focussed
     styleSheet.insertRule(` .tpul-settings-btn:focus::after {
 content: "";
 position: absolute;
@@ -182,6 +319,7 @@ top: 0;
 left: 0;
 }`);
 
+    // Tooltip of button
     styleSheet.insertRule(` .tpul-settings-btn span {
 position: absolute;
 z-index: 1;
@@ -206,6 +344,7 @@ transition: opacity .3s;
 }`);
 
 
+    // Arrow of tooltip
     styleSheet.insertRule(` .tpul-settings-btn span::after {
 content: "";
 position: absolute;
@@ -217,6 +356,7 @@ border-style: solid;
 border-color: transparent transparent #0E8AE0 transparent;
 }`);
 
+    // Show tooltip when hovering/focussing
     styleSheet.insertRule(`.tpul-settings-btn:hover span, .tpul-settings-btn:focus span {
 opacity: 1;
 }`);
@@ -225,6 +365,7 @@ opacity: 1;
 
     // THE SETTINGS PANEL
 
+    // The frame (gray, spans full page)
     styleSheet.insertRule(` .tpul-settings-frame {
 position: fixed;
 z-index: 1;
@@ -240,24 +381,120 @@ opacity: 0;
 pointer-events: none;
 }`);
 
+    // The frame when shown
     styleSheet.insertRule(`.tpul-settings-shown .tpul-settings-frame {
 opacity: 1;
 pointer-events: auto;
 }`);
 
+    // The settings window itself
     styleSheet.insertRule(` .tpul-settings-frame > div {
-margin: 10%;
-margin-top: 0;
+width: 80%;
+max-width: 800px;
+margin: auto;
+margin-bottom: 10%;
+
 position: relative;
 padding: 20px;
 
 border: 1px solid #888;
-background: white;
-color: black;
+border-radius: 15px;
+background: #353535;
 
+font-size: 16px;
+
+top: 200%;
 transition: top .5s;
-top: 100%;
 }`);
+
+    styleSheet.insertRule(`.tpul-settings-shown .tpul-settings-frame         > div { top: 120%; }`);
+    // In a game we want to have an 80% gap to be able to keep playing.
+    styleSheet.insertRule(`.tpul-settings-shown .tpul-settings-frame.in-game > div { top: 180%; }`);
+
+
+    styleSheet.insertRule(`.tpul-settings-frame .config_header {
+font-size: 2em;
+font-weight: bold;
+}`);
+
+    styleSheet.insertRule(`.tpul-settings-frame .section_header {
+font-size: 1.5em;
+font-weight: bold;
+}`);
+
+    styleSheet.insertRule(`.tpul-settings-frame .config_var {
+}`);
+
+
+    // ERRORS in fields:
+    styleSheet.insertRule(`.tpul-settings-frame .config_var input:invalid {
+box-shadow: inset 0 0 10px rgba(255,0,0,1), 0 0 10px rgba(255, 0, 0, 1);
+}`);
+
+    /*styleSheet.insertRule(`.tpul-settings-frame .config_var.error:before {
+content: attr(data-min) ' - ' attr(data-max);
+display: block;
+text-align: right;
+margin: 5px 20px;
+color: #FFA9A2;
+font-style: italic;
+}`);*/
+
+    styleSheet.insertRule(`.tpul-settings-frame .field_label {
+font-weight: bold;
+}`);
+    styleSheet.insertRule(`.tpul-settings-frame .form-control {
+background: #212121;
+border-color: #5f5f5f;
+}`);
+    styleSheet.insertRule(`.tpul-settings-frame .form-control[type="checkbox"] {
+width: auto;
+}`);
+    styleSheet.insertRule(`.tpul-settings-frame .btn-default {
+border-color: #888888;
+}`);
+    styleSheet.insertRule(`.tpul-settings-frame textarea.form-control {
+resize: vertical;
+}`);
+
+    styleSheet.insertRule(`.tpul-settings-frame .btn-primary {
+margin-left: 10px;
+}`);
+
+
+
+    styleSheet.insertRule(`.tpul-settings-frame .tab-list {
+border-bottom-color: #888888;
+}`);
+    styleSheet.insertRule(`.tpul-settings-frame .tab-list li {
+cursor: pointer;
+color: #8BC34A;
+font-size: 1.5em;
+}`);
+    styleSheet.insertRule(`.tpul-settings-frame .tab-list li:hover {
+color: #689F38;
+}`);
+    styleSheet.insertRule(`.tpul-settings-frame .tab-list li.active {
+border-color: #888888;
+border-bottom-color: transparent;
+background-color: #353535;
+}`);
+
+
+
+    // save/close/etc buttons
+
+    styleSheet.insertRule(`.tpul-settings-frame-buttons-holder {
+height: 0;
+text-align: right;
+}`);
+
+    styleSheet.insertRule(`.tpul-settings-frame-buttons-holder button {
+padding: 4px .5em;
+}`);
+
+
+    //Bad design notice:
 
     styleSheet.insertRule(` .tpul-settings-frame > div::after {
 content: "Sorry for the bad design, I'm working on it!";
@@ -265,12 +502,62 @@ font-style: italic;
 color: gray;
 }`);
 
-    styleSheet.insertRule(`.tpul-settings-shown .tpul-settings-frame        > div { top: 50%; }`);
-    styleSheet.insertRule(`.tpul-settings-shown .tpul-settings-frame.ingame > div { top: 80%; }`);
-
     // Stop the body from scrolling when the settings panel is shown
     styleSheet.insertRule(`body.tpul-settings-shown {
 overflow:hidden !important;
+}`);
+
+
+
+
+    // Notifications
+    styleSheet.insertRule(` .tpul-notification-success {
+border-color: #8BC34A;
+background: #4C6D25;
+color: black;
+}`);
+
+    styleSheet.insertRule(` .tpul-notification-error {
+border-color: #BD0E0B;
+background: #6B2121;
+color: #FFA9A2;
+}`);
+
+    styleSheet.insertRule(` .tpul-notification-warning {
+border-color: Olive;
+background: DarkKhaki;
+color: black;
+}`);
+
+    styleSheet.insertRule(` .tpul-notification {
+position: fixed;
+bottom: 0px;
+
+padding: 10px;
+
+width: 100%;
+
+text-align: center;
+
+cursor: pointer;
+z-index: 2;
+
+border-top: 1px solid #404040;
+background: #353535;
+color: #fff;
+
+animation: slideUp 1s;
+transform: translateY(0);
+transition: transform 1s;
+}`);
+
+    styleSheet.insertRule(` .tpul-notification.vanish {
+transform: translateY(100%);
+}`);
+
+    styleSheet.insertRule(` @keyframes slideUp {
+0% { transform: translateY(100%); }
+100% { transform: translateY(0%); }
 }`);
 
 
@@ -285,13 +572,14 @@ overflow:hidden !important;
 
 
 
-    var SettingsMenu = document.createElement('div');
+    var SettingsMenu = document.getElementById('tpul-settings-menu') || document.createElement('div');
     SettingsMenu.id = 'tpul-settings-menu';
 
-    var SettingsFrame = document.createElement('div');
+    var SettingsFrame = document.getElementsByClassName('tpul-settings-frame')[0] || document.createElement('div');
     SettingsFrame.className = 'tpul-settings-frame';
     if(location.port) SettingsFrame.classList.add('in-game');
     document.body.appendChild(SettingsFrame);
+
 
     // =====NOITCES MOD=====
 
@@ -303,27 +591,30 @@ overflow:hidden !important;
 
 
 
-    var GM_storage = Boolean(GM_setValue && GM_getValue),
+    var GM_storage = typeof GM_setValue === 'function' && typeof GM_getValue === 'function',
         all_settings = [],
-        last_opened = null;
-
-    if (!GM_storage) console.error("TPUL: Please @grant GM_setValue and GM_getValue in your userscripts metadata!");
+        profileId = null,
+        last_opened = null,
+        rollingChatEnabled = false;
 
     var tpul = {
+        get version(){return version},
 
         settings: {
             addSettings: function({id, title, fields, icon, tooltipText, buttonText}) {
 
-                if (!GM_storage && !id) throw "TPUL: Please @grant GM_setValue and GM_getValue in your userscripts metadata!";
-                else if (!GM_storage) console.error("TPUL: Please @grant GM_setValue and GM_getValue in your userscripts metadata!");
-
                 var config = arguments[0];
 
+                if (config.allowLocal && !id && !GM_storage) throw "TPUL: A unique id is required, because localStorage will be used! By the way; it is better to @grant GM_getValue and GM_setValue and set 'allowLocal:false' to use private storage instead.";
+
+                if (!config.allowLocal && !GM_storage) throw "TPUL: Please @grant GM_setValue and GM_getValue in your userscripts metadata (recommended) or use 'allowLocal:true' (not recommended)";
+
+
                 if (arguments.length != 1 || typeof config != 'object')
-                    throw Error("addSettings() takes one object ass an argument! Example: addSettings( {id:'MySettings', title:'Hello World'} )");
+                    throw Error("addSettings() takes one object as an argument! Example: addSettings( {id:'MySettings', title:'Hello World'} )");
 
                 // Create a new GM_config instance
-                var settings = new GM_configStruct({
+                let settings = new GM_configStruct({
 
                     frame: SettingsFrame,
 
@@ -339,28 +630,150 @@ overflow:hidden !important;
                             //Remove the default inline style of the GM_config frame
                             this.frame.setAttribute('style', '');
 
+                            //Apply some TagPro/Bootstrap styles
+                            SettingsFrame.firstChild.classList.add('form-horizontal');
+                            for (let el of SettingsFrame.getElementsByClassName('config_header')) el.classList.add('header-title');
+                            for (let el of SettingsFrame.getElementsByClassName('config_var')) el.classList.add('form-group');
+                            for (let el of SettingsFrame.getElementsByClassName('field_label')) {
+                                el.classList.add('col-xs-4');
+                                el.classList.add('control-label');
+                            }
+                            for (let el of SettingsFrame.getElementsByClassName('radio_label')) el.classList.add('radio');
+                            for (let el of [...SettingsFrame.getElementsByTagName('input'),
+                                            ...SettingsFrame.getElementsByTagName('select'),
+                                            ...SettingsFrame.getElementsByTagName('textarea')]) {
+
+                                switch (el.type) {
+                                    case 'radio':
+                                        el.parentElement.classList.add('col-xs-8');
+                                        el.parentElement.style.paddingLeft = '30px';
+                                        el.nextElementSibling.prepend(el);
+                                        continue;
+                                    case 'button':
+                                        el.classList.add('btn');
+                                        el.classList.add('btn-default');
+                                        break;
+                                    default:
+                                        el.classList.add('form-control');
+
+                                }
+
+                                var div = document.createElement('div');
+                                el.parentElement.appendChild(div);
+                                div.appendChild(el);
+
+                                div.classList.add('col-xs-8');
+                                div.classList.add('pull-right');
+                            }
+
+                            // The footer with the buttons:
+
+                            var buttonsHolder = SettingsFrame.firstElementChild.lastElementChild;
+                            buttonsHolder.classList.add('col-sm-12');
+                            buttonsHolder.classList.add('tpul-settings-frame-buttons-holder');
+
+                            // Place the "footer" on top
+                            buttonsHolder.parentElement.insertBefore(buttonsHolder, buttonsHolder.parentElement.firstElementChild);
+
+                            for (var btn of [...buttonsHolder.getElementsByClassName('saveclose_buttons'),
+                                             ...buttonsHolder.getElementsByClassName('reset')]) {
+                                btn.classList.add('btn');
+                                btn.classList.add('btn-primary');
+                            }
+
+                            buttonsHolder.innerHTML = '';
+
+                            for (var type of this.buttons || ['ok','cancel','reset']) {
+                                var button = document.createElement('button');
+                                button.className = 'btn btn-primary';
+                                button.settings = settings;
+                                buttonsHolder.appendChild(button);
+
+                                switch(type.toLowerCase()) {
+                                    case 'ok':
+                                        button.onclick = function(){
+                                            if(this.settings.valid()) {this.settings.save(); this.settings.close(); tpul.notify('Options saved!','success');}
+                                            else {tpul.notify('Please fix any issues before saving', 'error');}
+                                        };
+                                        button.innerText = 'Ok';
+                                        break;
+                                    case 'cancel':
+                                        button.onclick = function(){ this.settings.close(); tpul.notify('Options canceled','warning'); };
+                                        button.innerText = 'Cancel';
+                                        break;
+                                    case 'reset':
+                                        button.onclick = function(){ this.settings.reset(); tpul.notify('All options are reset to their defaults','');};
+                                        button.innerText = 'Reset';
+                                        break;
+                                    case 'save':
+                                        button.onclick = function(){
+                                            if(this.settings.valid()) {this.settings.save(); tpul.notify('Options saved!','success');}
+                                            else {tpul.notify('Please fix any issues before saving', 'error');}
+                                        };
+                                        button.innerText = 'Save';
+                                        break;
+                                    case 'close':
+                                        button.onclick = function(){ this.settings.close(); tpul.notify('Options canceled','warning'); };
+                                        button.innerText = 'Close';
+                                        break;
+                                }
+                            }
+
+
+                            if (this.tabs) {
+
+                                var tablist = document.createElement('ul');
+                                tablist.classList.add('tab-list');
+                                SettingsFrame.firstElementChild.insertBefore(tablist, SettingsFrame.firstElementChild.lastElementChild);
+
+                                var tabcontent = document.createElement('div');
+                                tabcontent.classList.add('tab-content');
+                                SettingsFrame.firstElementChild.insertBefore(tabcontent, SettingsFrame.firstElementChild.lastElementChild);
+
+                                for (let el of [...SettingsFrame.getElementsByClassName('section_header_holder')]) {
+
+                                    var header = el.getElementsByClassName('section_header')[0];
+
+                                    tablist.innerHTML += '<li data-target="#'+el.id+'">' + header.innerText;
+
+                                    tabcontent.appendChild(el);
+                                    el.classList.add('tab-pane');
+
+                                    el.removeChild(header);
+                                }
+
+                                tablist.firstElementChild.click();
+
+                            } else {
+                                for (let el of SettingsFrame.getElementsByClassName('section_header')) el.classList.add('header-title');
+                            }
+
                             //Close all other settings (of other scripts)
+                            //This shouldn't be necessary, unless someone opens these settings via a non-conventional way
                             for (var other of all_settings) if(other != this) other.close();
 
                             //Open the settings on our way (animated, blocking scroll of body etc.)
                             this.frame.style.display = '';
-                            document.body.classList.add('tpul-settings-shown')
+                            SettingsFrame.scrollTop = SettingsFrame.offsetHeight;
+                            document.body.classList.add('tpul-settings-shown');
 
-                            last_opened = this;
+                            last_opened = settings;
 
-                            if (this.config.events && typeof this.config.events.open == "function")
-                                this.config.events.open.call(this,...arguments);
+                            if (this.events && typeof this.events.open == "function")
+                                this.events.open.call(this,...arguments);
                         },
 
                         close: function(){
-                            if(this.isOpen)//TODO: Check whether unsaved?
+                            if(this.isOpen){}//TODO: Check whether unsaved?
+
+                            SettingsFrame.removeEventListener('scroll', settings.scroll);
 
                             //close the settings in our way (animated)
                             this.frame.style.display = '';
                             document.body.classList.remove('tpul-settings-shown')
 
-                            if (this.config.events && typeof this.config.events.close == "function")
-                                this.config.events.close.call(this,...arguments);
+                            if (this.events && typeof this.events.close == "function")
+                                this.events.close.call(this,...arguments);
                         },
                     }
                 });
@@ -377,11 +790,10 @@ overflow:hidden !important;
                 });
 
                 settings.button = button;
-                settings.config = config;
+
+                for (let c in config) if(settings[c] === undefined) settings[c] = config[c];
 
                 all_settings.push(settings);
-
-                if(!last_opened) last_opened = settings;
 
                 return settings;
 
@@ -415,7 +827,10 @@ overflow:hidden !important;
 
                 return button;
             },
-            setParent: function(container=null) {
+            get parent() {return SettingsMenu.parentElement},
+            set parent(container) {
+
+                if (container) console.warn('You are repositioning the tpul settings menu. This will affect all settings buttons, not only for your script!');
 
                 container = container ||
                     document.getElementById('tpul-settings-container') || // Try to add it to a position pre-defined by another script (such as ModFather)
@@ -425,17 +840,695 @@ overflow:hidden !important;
                 if (container) {
                     container.classList.remove('hidden');
                     container.appendChild(SettingsMenu);
-                    return SettingsMenu;
+                } else console.error('Couldn\'t find a parent element.');
+
+                return container;
+            },
+            get menu(){ return SettingsMenu; },
+            set menu(_){ throw "You can't change the TPUL settings menu object. You might mean to change the tpul.settings.parent"; },
+        },
+
+        profile: {
+            getId: function() {
+
+                if (!tpul_promises.getProfileId) {
+                    tpul_promises.getProfileId = new Promise(function(resolve,reject) {
+
+                        GM_xmlhttpRequest({
+                            method: "GET",
+                            url: "http://"+document.location.hostname+"/",
+                            onload: function(){
+                                var match = this.responseText.match(/profile\/([0-9a-f]+)/i);
+                                if (match) {
+                                    profileId = match[1];
+                                    resolve(profileId);
+                                } else reject({error:"not logged in"});
+                            },
+                            onerror: ()=> reject({error:"request error", request:this}),
+                        });
+                    });
                 }
 
-                console.error('Couldn\'t find a parent element.');
-                return -1;
+                return tpul_promises.getProfileId;
             },
-            getMenu: _ => SettingsMenu,
+
+            getInfo: function() {
+
+                if (!tpul_promises.getProfileInfo) {
+
+                    tpul_promises.getProfileInfo = new Promise(function(resolve,reject) {
+
+                        tpul.profile.getId().then( function(id){
+
+                            GM_xmlhttpRequest({
+                                method: "GET",
+                                url: "http://"+document.location.hostname+"/profiles/"+id,
+                                onload: function(r){
+                                    // 'r' is the response that we get back from the TP server, lets do some error handling with it:
+
+                                    var arr;
+                                    try{  arr = JSON.parse(r.response);  }
+                                    catch(e){  reject({error:"/profiles/ responded invalid JSON", request:this});  }
+
+                                    if(arr.error) reject(arr);
+
+                                    if(Array.isArray( arr ) && arr.length == 1) {
+                                        resolve(arr[0]);
+                                    }
+                                    else reject({error:"unknown error", response:arr, request:this});
+                                },
+                                onerror: ()=> reject({error:"request error", request:this}),
+                            });
+                        });
+
+                        tpul.profile.getId().catch( reject );
+
+                    });
+                }
+
+                return tpul_promises.getProfileInfo;
+            },
+
+            getPage: function() {
+
+                if (!tpul_promises.getProfilePage) {
+
+                    tpul_promises.getProfilePage = new Promise(function(resolve,reject) {
+
+                        tpul.profile.getId().then( function(id){
+
+                            GM_xmlhttpRequest({
+                                method: "GET",
+                                url: "http://"+document.location.hostname+"/profile/"+id,
+                                onload: function(r){
+                                    // 'r' is the response that we get back from the TP server, lets do some error handling with it:
+                                    if(r.response.error) reject(r.response);
+
+                                    var match,
+                                        profile = {
+                                            settings: {
+                                                allChat: undefined,
+                                                teamChat: undefined,
+                                                groupChat: undefined,
+                                                systemChat: undefined,
+                                                tutorialChat: undefined,
+
+                                                names: undefined,
+                                                degrees: undefined,
+                                                matchState: undefined,
+                                                performanceInfo: undefined,
+                                                spectatorInfo: undefined,
+
+                                                stats: undefined,
+                                            },
+
+                                            flair: [],
+                                        };
+
+                                    // If the 'settings' div cannot be found, assume to not be logged in.
+                                    if( !/<div(?: [^>]*)? id="settings"/i.test(this.responseText) ) return reject({error:"not logged in", request:this});
+
+                                    // Get the global settings
+                                    // (ball spin, respawn warnings and video settings are NOT stored on the TP server,
+                                    //     only in a cookie on your device)
+                                    for (var setting in profile.settings) {
+                                        match = RegExp('<input(?: [^>]*)? id="' +setting+ '"(?: [^>]*)? (checked)?', 'i').exec(this.responseText);;
+                                        if (match) {
+                                            profile.settings[setting] = Boolean(match[1]);
+                                        } else return reject({error:"unknown error", request:this});
+                                    }
+
+                                    // Get the 'Custom Team Names' setting (the only non-boolean setting)
+                                    /*
+                                    <select id="teamNames" name="teamNames" class="form-control">
+                                        <option value="always" >Always</option>
+                                        <option value="spectating" >When Spectating</option>
+                                        <option value="never" selected>Never</option>
+                                    </select>
+                                    */
+
+                                    var teamNamesOptions = /<select(?: [^>]*)? id="teamNames"(?: [^>]*)?>((?:\s*?.*?)*?)<\/select>/i.exec(this.responseText);
+                                    if (teamNamesOptions) {
+                                        var teamNamesOpt_rgx = /<option(?: [^>]*)? value="([^>]*)"(?: [^>]*)? (selected)?(?: [^>]*)?>/ig;
+                                        while (match = teamNamesOpt_rgx.exec(teamNamesOptions[1]) ){
+
+                                            if (match[2]) {
+                                                profile.settings.teamNames = match[1];
+                                                break;
+                                            }
+                                        }
+                                    } else return reject({error:"unknown error", request:this});
+
+                                    // Get both names
+                                    for (var name of ['reservedName','displayedName']) {
+                                        match = RegExp('<input(?: [^>]*)? id="' +name+ '"(?: [^>]*)? value="(.*?)"', 'i').exec(this.responseText);;
+                                        if (match) {
+                                            profile[name] = match[1];
+                                        } else return reject({error:"unknown error", request:this});
+                                    }
+
+                                    // Get your email
+                                    match = /<span(?: [^>]*)? class="hidden-email"(?: [^>]*)?>[^<]*?\b([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\b<\/span>/i.exec(this.responseText);;
+                                    if (match) {
+                                        profile.email = match[1];
+                                    } else return reject({error:"unknown error", request:this});
+
+                                    // Get all flairs, and whether they are available, and which one is selected
+                                    var flair_rgx = /<li class="(.*?)" data-flair="(.*?)">/ig;
+                                    while (match = flair_rgx.exec(this.responseText)) {
+                                        var i = profile.flair.push({
+                                            id: match[2],
+                                            selected: match[1].includes('selected'),
+                                            available: match[1].includes('flair-available'),
+                                        });
+                                        if (profile.flair[i-1]) profile.selectedFlair = profile.flair[i-1];
+                                    }
+
+                                    // Remove duplicate flairs (because there are 3 tabs)
+                                    var flair_ids = [];
+                                    profile.flair = profile.flair.filter(flair => !flair_ids.includes(flair.id) && flair_ids.push(flair.id));
+
+                                    resolve(profile);
+
+                                },
+
+                                onerror: ()=> reject({error:"request error", request:this}),
+                            });
+                        });
+
+                        tpul.profile.getId().catch( reject );
+                    });
+                }
+
+                return tpul_promises.getProfilePage;
+            },
+
+            getRolling: function() {
+
+                if (!tpul_promises.getProfileRolling) {
+
+                    tpul_promises.getProfileRolling = new Promise(function(resolve,reject) {
+
+                        tpul.profile.getId().then( function(id){
+
+                            GM_xmlhttpRequest({
+                                method: "GET",
+                                url: "http://"+document.location.hostname+"/profile_rolling/"+id,
+                                onload: function(r){
+                                    // 'r' is the response that we get back from the TP server, lets do some error handling with it:
+                                    if(r.response.error) reject(r.response);
+                                    if(Array.isArray( r.response )) {
+                                        resolve(r.response);
+                                    }
+                                    else reject({error:"unknown error", request:this});
+                                },
+                                onerror: ()=> reject({error:"request error", request:this}),
+                            });
+                        });
+
+                        tpul.profile.getId().catch( reject );
+
+                    });
+                }
+
+                return tpul_promises.getProfileRolling;
+            },
+
+            getReservedName: function(fallbackTimeout=5e3) {
+
+                /*
+
+                Where to get the Reserved name from?
+
+                    - in-game when auth
+                    - getInfo /profiles/...
+                    - getPage /profile/...
+
+                Logic:
+
+                    1. if getInfo was called before: use that
+                    2. if getPage was called before: use that
+                    3. if in-game and auth: get it that way
+                    4. call getInfo() to get the name
+
+                */
+
+                if (!tpul_promises.getReservedName) {
+
+                    tpul_promises.getReservedName = new Promise(function(resolve,reject) {
+
+                        // The fallback: get the reserved name using getInfo()
+                        var fallback = function(){
+
+                            done = true;
+
+                            tpul.profile.getInfo().then(function(profileInfo) {
+
+                                resolve(profileInfo.reservedName);
+                            });
+
+                            tpul.profile.getInfo().catch( reject );
+                        };
+
+                        if (tpul_promises.getProfileInfo) {
+
+                            tpul_promises.getProfileInfo.then(function(profileInfo){
+                                resolve(profileInfo.reservedName);
+                            });
+
+                            tpul_promises.getProfileInfo.catch( reject );
+
+                        } else if (tpul_promises.getProfilePage) {
+
+                            tpul_promises.getProfilePage.then(function(profilePage){
+                                resolve(profilePage.reservedName);
+                            });
+
+                            tpul_promises.getProfilePage.catch( reject );
+
+                        } else if (typeof tagpro != 'undefined' && tagpro.ready) {
+                            tagpro.ready(function(){
+
+                                if (tagpro.players) {
+                                    if (tagpro.players[tagpro.playerId]) {
+
+                                        if (tagpro.players[tagpro.playerId].auth) {
+                                            resolve (tagpro.players[tagpro.playerId].name);
+                                        } else fallback();
+
+                                    } else {
+
+                                        tagpro.socket.on('p',function(playerId) {
+                                            if (tagpro.players[tagpro.playerId]) {
+
+                                                if (tagpro.players[tagpro.playerId].auth) {
+                                                    resolve (tagpro.players[tagpro.playerId].name);
+                                                } else fallback();
+
+                                            };
+                                        });
+
+                                    }
+                                } else fallback();
+                            });
+                        } else fallback();
+
+                        var done = false;
+                        setTimeout(function(){
+                            tpul_promises.getReservedName.then(()=>done=true);
+                        });
+
+                        setTimeout( function() { if (!done) fallback(); }, fallbackTimeout );
+
+                    });
+                }
+
+                return tpul_promises.getReservedName;
+            },
+
+            getDisplayedName: function(fallbackTimeout = 5e3) {
+
+                 /*
+
+                Where to get the Displayed name from?
+
+                    - in-game
+                    - getProfile /profile/...
+
+                Logic:
+
+                    1. if getPage was called before: use that
+                    2. if in-game: get it that way
+                    3. call getPage() to get the name
+
+                */
+
+                if (!tpul_promises.getDisplayedName) {
+
+                    tpul_promises.getDisplayedName = new Promise(function(resolve,reject) {
+
+                        // The fallback: get the displayed name using getPage()
+                        var fallback = function(){
+
+                            done = true;
+
+                            tpul.profile.getPage().then(function(profilePage) {
+
+                                resolve(profilePage.displayedName);
+                            });
+
+                            tpul.profile.getPage().catch( reject );
+                        };
+
+                        if (tpul_promises.getProfilePage) {
+
+                            tpul_promises.getProfilePage.then(function(profilePage){
+                                resolve(tpul_promises.getProfilePage.displayedName);
+                            });
+
+                            tpul_promises.getProfilePage.catch( reject );
+
+                        } else if (typeof tagpro != 'undefined' && tagpro.ready) {
+                            tagpro.ready(function(){
+
+                                if (tagpro.players) {
+                                    if (tagpro.players[tagpro.playerId]) {
+
+                                        resolve (tagpro.players[tagpro.playerId].name);
+
+                                    } else {
+
+                                        tagpro.socket.on('p',function(playerId) {
+                                            if (tagpro.players[tagpro.playerId]) {
+
+                                                resolve (tagpro.players[tagpro.playerId].name);
+
+                                            };
+                                        });
+
+                                    }
+                                } else fallback();
+                            });
+                        } else fallback();
+
+                        var done = false;
+                        setTimeout(function(){
+                            tpul_promises.getDisplayedName.then(()=>done=true);
+                        });
+
+                        setTimeout( function() { if (!done) fallback(); }, fallbackTimeout );
+
+                    });
+                }
+
+                return tpul_promises.getDisplayedName;
+
+            },
+
+            getSettings: function(fallbackTimeout = 5e3) {
+
+                /*
+
+                Where to get the settings from?
+
+                    - in-game
+                    - getPage /profile/...
+
+                Logic:
+
+                    1. if in-game: get it that way
+                    2. call getPage() to get the settings
+
+                */
+
+                var top_args = arguments;
+
+                if (!tpul_promises.getProfileSettings) {
+
+                    tpul_promises.getProfileSettings = new Promise(function(resolve,reject) {
+
+                        var fallback = function(){
+
+                            done = true;
+
+                            tpul.profile.getPage().then(function(profilePage){
+                                resolve(profilePage.settings);
+                            });
+
+                            tpul.profile.getPage().catch( reject );
+                        };
+
+                        if (top_args[0] && top_args[0].__settings) {
+                            resolve(top_args[0].__settings);
+                        } else if (tpul_promises.getProfilePage) {
+
+                            tpul_promises.getProfilePage.then(function(profilePage){
+                                resolve(profilePage.settings);
+                            });
+
+                            tpul_promises.getProfilePage.catch( reject );
+
+                        } else if (typeof tagpro != 'undefined' && tagpro.ready) {
+                            tagpro.ready(function(){
+
+                                if (tagpro.socket && tagpro.socket.on) {
+
+                                    tagpro.socket.on('settings', function(settings) {
+                                        resolve({...settings.ui, stats: settings.stats});
+                                    });
+
+                                } else fallback();
+                            });
+                        } else fallback();
+
+                        var done = false;
+                        setTimeout(function(){
+                            tpul_promises.getProfileSettings.then(()=>done=true);
+                        });
+
+                        setTimeout( function() { if (!done) fallback(); }, fallbackTimeout );
+
+                    });
+
+                }
+
+                return tpul_promises.getProfileSettings;
+
+            },
+
+            setSettings: function(newSettings, persistent=true, immediately=false) {
+
+                if (immediately) console.warn("Most settings will NOT take effect immediately, I might add this functionality in the future. Only chat settings work at the moment.");
+
+                return new Promise(function(resolve, reject){
+
+                    // Step 1: set any local (cookie) settings
+                    // These don't have to be send to the server, easy!
+
+                    if (persistent) {
+
+                        for (let setting in newSettings) {
+                            if (['sound',
+                                 'music',
+                                 'volume',
+
+                                 'textures',
+
+                                 'disableBallSpin',
+                                 'tileRespawnWarnings',
+                                 'disableTutorialChat', // This cookie seems to be unused
+                                 // Setting it anyway \(^.^)/
+
+                                 'disableParticles',
+                                 'forceCanvasRenderer',
+                                 'disableViewportScaling',
+                                ].includes(setting)) {
+
+                                var expires = new Date(Date.now() + 31536e8).toUTCString(); // A century from now (same as TagPro uses)
+                                document.cookie = setting + '=' + newSettings[setting] + '; expires='+expires+'; path=/; domain=.koalabeast.com';
+                            }
+                        }
+
+                        // Step 2: send any server-sided settings to the server
+
+                        if (['reservedName',
+                             'displayedName',
+
+                             'allChat',
+                             'teamChat',
+                             'groupChat',
+                             'systemChat',
+                             'tutorialChat',
+
+                             'names',
+                             'degrees',
+                             'matchState',
+                             'performanceInfo',
+                             'spectatorInfo',
+
+                             'teamNames',
+                             'stats',
+                            ].some( s => s in newSettings ) ){
+
+                            // Call these to let them run in parallel
+                            tpul.profile.getSettings();
+                            tpul.profile.getReservedName();
+                            tpul.profile.getDisplayedName();
+
+                            tpul.profile.getSettings().then( function(settings){
+                                tpul.profile.getReservedName().then( function(reservedName){
+                                    tpul.profile.getDisplayedName().then( function(displayedName){
+
+                                        console.log(param({reservedName: reservedName, // Your reservedName
+                                                           displayedName: displayedName,  // Your displayedName
+                                                           //...settings, // The current settings
+                                                           //...newSettings}));
+                                                          }));
+                                        var req = GM_xmlhttpRequest({
+                                            data: param({...settings, // The current settings
+                                                   reservedName: reservedName, // Your reservedName
+                                                   displayedName: displayedName,  // Your displayedName
+                                                   ...newSettings}), // Overwrite with the settings that you want to edit.
+                                            method: "POST",
+                                            headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                                            url: "http://"+document.location.hostname+"/profile/update",
+                                            onload: function(r){
+                                                // 'r' is the response that we get back from the TP server, lets do some error handling with it:
+
+                                                var arr;
+                                                try{  arr = JSON.parse(r.response);  }
+                                                catch(e){  reject({error:"/profile/update responded invalid JSON", request:this});  }
+
+                                                if(arr.error) reject(arr);
+                                                else if(arr.success) {
+                                                    resolve(arr);
+                                                } else reject({error:'unknown error',response: arr, request:this});
+                                            },
+                                            onerror: reject,
+                                        });
+
+                                    });
+                                });
+                            });
+
+                        }
+
+                    }
+
+                    // Step 3: In case we are in-game, let the settings go into effect immediately.
+                    // To update the reserved name, a refresh is required. TPUL won't do this!
+
+                    if (immediately && tagpro) {
+                        if (!tagpro.settings) tagpro.settings = {ui:{}};
+                        if (!tagpro.settings.ui) tagpro.settings.ui = {};
+
+                        for (let setting in newSettings) {
+                            if (['allChat',
+                                 'teamChat',
+                                 'groupChat',
+                                 'systemChat',
+                                 'tutorialChat',
+                                ].includes(setting)){
+
+                                tagpro.settings.ui[setting] = newSettings[setting];
+                            }
+                        }
+
+                        if (setting == 'tutorialChat') {
+                            var tutorialButton = document.getElementById('tutorialButton');
+
+                            if (tutorialButton) {
+                                var action = tutorialButton.innerText === "Enable Tips";
+                                if (newSettings[setting] == action) tutorialButton.click();
+                            }
+                        }
+
+
+                    }
+
+                });
+            }
+
+        },
+
+        rollingChat: {
+
+            _init: function initRollingChat(enable = false){
+
+                // In case you don't want to load the full TPUL library,
+                // You can add RollingChat to your own script by copying this function
+                // Usage:
+                //     initRollingChat(true);
+
+                if (!tagpro.rollingChat) {
+
+                    tagpro.rollingChat = {
+                        enabled: false,
+                        get handler() {
+                            return function(event) {
+
+                                // Return if not enabled
+                                if (!tagpro.rollingChat.enabled) return;
+
+                                // Whether you are releasing instead of pressing the key:
+                                var releasing = event.type == 'keyup';
+
+                                // Check if any modifier keys where held down during a keyDown
+                                if (!releasing && (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey)) return;
+
+                                // The key that is pressed/released (undefined when it is any other key)
+                                var arrow = ['left','up','right','down'][[37,38,39,40].indexOf(event.keyCode)]
+
+                                // Only if the controls are disabled (usually while composing a message)
+                                // AND the key is indeed an arrow (not undefined)
+                                if (tagpro.disableControls && arrow) {
+
+                                    // Prevent the 'default' thing to happen, which is the cursor moving through the message you are typing
+                                    event.preventDefault();
+
+                                    // Return if already pressed/released
+                                    if (tagpro.players[tagpro.playerId].pressing[arrow] != releasing) return;
+
+                                    // Send the key press/release to the server!
+                                    tagpro.sendKeyPress(arrow, releasing);
+
+                                    // Not necesarry, but useful for other scripts to 'hook onto'
+                                    if (!releasing && tagpro.events.keyDown) tagpro.events.keyDown.forEach(f => f.keyDown(arrow));
+                                    if (releasing && tagpro.events.keyUp) tagpro.events.keyUp.forEach(f => f.keyUp(arrow));
+                                    tagpro.ping.avg&&setTimeout(()=>(tagpro.players[tagpro.playerId][arrow]=!releasing),tagpro.ping.avg/2);
+                                }
+                            }
+                        }
+                    }
+
+                    // intercept all key presses and releases:
+                    document.addEventListener('keydown', tagpro.rollingChat.handler);
+                    document.addEventListener('keyup', tagpro.rollingChat.handler);
+                }
+
+                if (enable) tagpro.rollingChat.enabled = true;
+            },
+
+            get enabled(){
+                tpul.rollingChat._init();
+                return tagpro.rollingChat.enabled;
+            },
+
+            set enabled(e){
+                tpul.rollingChat._init();
+                tagpro.rollingChat.enabled = Boolean(e);
+            },
+        },
+
+        notify: function(text, type="message", timeout=Math.max(4000, 50*text.length) ){
+
+            // Accepted types: message, success, error, warning
+            //              (  white    green    red    yellow )
+            // For more types, the only thing you need to add is some CSS
+
+            var notification = document.createElement('div');
+            notification.className = 'tpul-notification tpul-notification-' + type;
+            notification.innerText = text;
+            document.body.appendChild(notification);
+
+            // Hide after a while (timeout)
+            setTimeout(function(notification){
+                if(notification)notification.classList.add('vanish');
+            }, timeout, notification);
+
+            // Hide on click
+            notification.onclick = function(){ this.classList.add('vanish'); }
+
+            // Clear up the DOM once the notification is vanished
+            notification.addEventListener('transitionend',function(){ this.remove(); });
+
+            // Return the element, for scripters to "play" with
+            return notification;
+
         }
     };
 
-    tpul.settings.setParent();
+    if (!SettingsMenu.parentElement) tpul.settings.parent = null;
 
 
 
@@ -443,21 +1536,68 @@ overflow:hidden !important;
 
     // OPENING AND CLOSING
 
-    document.addEventListener('click', function(click) {
+    SettingsFrame.onclick = function(click) {
 
         // Close all settings when clicking outside the panel
         if (SettingsFrame == click.target) for (var settings of all_settings) settings.close();
 
-    }, {passive: true});
+    }
 
-    document.addEventListener('wheel', function(wheel) {
+    SettingsFrame.addEventListener('scroll', function(wheel) {
 
         // Open when scrolling down (only in game)
-        if (location.port && wheel.deltaY > 0 && !last_opened.isOpen) last_opened.open();
+        if (location.port && wheel.deltaY > 0 && last_opened && !last_opened.isOpen) last_opened.open();
 
         // Close all settings when scrolling up far enough
-        if (SettingsFrame.scrollTop == 0 && wheel.deltaY < 0) for (var settings of all_settings) settings.close();;
-    }, {passive: true});
+        setTimeout(function(){
+            if (SettingsFrame.firstElementChild &&
+                SettingsFrame.scrollTop + SettingsFrame.offsetHeight <= SettingsFrame.firstElementChild.offsetTop + 20)
+                for (var settings of all_settings) settings.close()
+        },200);
+    });
+
+
+
+
+    // Section tabs
+
+    SettingsFrame.addEventListener('click', function(click) {
+        var tablist = click.target.parentElement;
+        if (tablist.classList.contains('tab-list')) {
+            for (let li of tablist.getElementsByTagName('li'))
+                li.classList.remove('active');
+            for (let pane of tablist.parentElement.getElementsByClassName('tab-pane'))
+                pane.classList.remove('active');
+            click.target.classList.add('active');
+            document.querySelector(click.target.dataset.target).classList.add('active');
+        }
+    });
+
+
+
+    // Get settings from socket:
+
+    if (tagpro && tagpro.ready) {
+        tagpro.ready(function(){
+            if (tagpro.socket && tagpro.socket.on) {
+                tagpro.socket.on('settings', function(settings) {
+                    // Don't try to tamper with this, or copy this in your own script.
+                    // It will affect all scripts using TPUL.
+                    tpul.profile.getSettings( {__settings:{...settings.ui, stats: settings.stats}} );
+                });
+            }
+        });
+    }
+
+    // Some helper functions
+
+    function param(o){
+
+        return Object.keys(o).map(function(k) {
+            return encodeURIComponent(k) + '=' + encodeURIComponent(o[k.replace(' ','+')])
+        }).join('&').replace(/%20/g, '+');
+    }
+
 
 
 
@@ -467,13 +1607,76 @@ overflow:hidden !important;
 
 
 
-    try {
-        window.tpul = tpul;
-        unsafeWindow.tpul = tpul;
-        unsafeWindow.tagpro.tpul = tpul;
-    }catch(e){}
+    if (typeof tpul_promises == 'undefined') {
+        try{
+            window.tpul_promises = {};
+            unsafeWindow.tpul_promises = window.tpul_promises;
+        }catch(e){}
+    }
+
 
     return tpul;
 })();
+
+
+// DEBUGGING!
+t = tpul.settings.addSettings({
+    id: 'TestSettings',
+    title: "Testing....",
+    tooltipText: "Tooltippy",
+    buttonText: "TT",
+    tabs: true,
+    buttons: ['ok','cancel','reset'],
+    fields: {
+        slices: {
+            label: 'Slices',
+            type: 'int',
+            min: 2,
+            max: 180,
+            default: 7,
+        },
+        tp_warnings: {
+            label: 'Tile Respawn Warnings:',
+            title: 'This is the same setting as on TagPro\'s scoreboard',
+            type: 'select',
+            options: ['Blink','Transparant','None'],
+            default: 'Transparant',
+            save: false
+        },
+        affdsdf:{
+            type: 'int',
+            default: 5,
+        },
+        b:{
+            label: 'check',
+            type: 'checkbox',
+        },
+        c:{
+            type: 'text',
+            size: 10,
+            label: 'right label',
+        },
+        d:{
+            label: 'label',
+            options: ['male','female'],
+            type: 'radio',
+        },
+        e:{
+            section: ['Section!','sectiooooooooon'],
+            label: 'label',
+            type: 'textarea',
+        },
+        f:{
+            section: ['Section 2!','sectiooooooooon 2'],
+            type: 'button',
+            label: 'right label',
+            size: 20,
+        },
+    },
+});
+
+
+asdf = tpul;
+
 
 
