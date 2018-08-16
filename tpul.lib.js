@@ -247,7 +247,7 @@ radios.length;i<len;++i)if(radios[i].value==this["default"])radios[i].checked=tr
 
         if (!['radio','select','checkbox','button','hidden'].includes(type)) {
             // Disable TagPro's controls when typing inside a field you can type in
-            // You can call tpul.rollingChat.enable() to make the Arrow keys move your ball, even when typing text.
+            // You can set tpul.rollingChat.enable = true to make the Arrow keys move your ball, even when typing text.
             this.node.addEventListener('focus', function(){tagpro.disableControls = true;});
             this.node.addEventListener('blur', function(){tagpro.disableControls = false;});
         }
@@ -1496,6 +1496,7 @@ transform: translateY(100%);
 
             set enabled(e){
                 tpul.rollingChat._init();
+                if (!e) console.warn('Disabling Rolling Chat! This will disable Rolling Chat for all scripts, not only yours! Please enable it again asap to not get users confused.');
                 tagpro.rollingChat.enabled = Boolean(e);
             },
         },
