@@ -37,7 +37,7 @@ console.log('Loading TPUL (TagPro Userscript Library) version '+version);
 
 // To use this library, include these 5 lines in your userscripts' metadata block:
 
-// @require      https://github.com/wilcooo/TagPro-UserscriptLibrary/raw/master/tpul.lib.js
+// @require      https://greasyfork.org/scripts/371240/code/TagPro%20Userscript%20Library.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_xmlhttpRequest
