@@ -2,7 +2,7 @@
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
 // @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
-// @version      2.1
+// @version      3.0
 // @license      MIT
 // @include      *.koalabeast.com*
 // @include      *.jukejuice.com*
@@ -21,12 +21,12 @@
 // ==UserLibrary==
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
-// @version      1.0
+// @version      3.0
 // @license      MIT
 // ==/UserLibrary==
 
 
-var version = 1.4;
+var version = 3.0;
 console.log('Loading TPUL (TagPro Userscript Library) version '+version);
 
 
@@ -50,6 +50,23 @@ console.log('Loading TPUL (TagPro Userscript Library) version '+version);
 
 
 
+
+
+/* TODO
+
+Option to change the layout of the settings
+
+Show a "scroll down" reminder
+
+Notify "options cancld" when scrolling away
+
+margin beneath buttons on scoreboard
+
+option to disable notifications.
+
+ESC cancels, option to Save when canceld (scroll away, esc)
+
+*/
 
 
 
@@ -195,7 +212,7 @@ radios.length;i<len;++i)if(radios[i].value==this["default"])radios[i].checked=tr
         }
 
         return true;
-    }
+    };
 
 
     // Change the field prototype
@@ -209,7 +226,7 @@ radios.length;i<len;++i)if(radios[i].value==this["default"])radios[i].checked=tr
         var unsigned = false,
             type = this.settings.type;
 
-        if (type.indexOf('unsigned ') == 0) {
+        if (type.indexOf('unsigned ') === 0) {
             type = type.substring(9);
             unsigned = true;
         }
@@ -253,7 +270,7 @@ radios.length;i<len;++i)if(radios[i].value==this["default"])radios[i].checked=tr
         }
 
         return retNode;
-    }
+    };
 
 
 
@@ -285,7 +302,7 @@ var tpul = (function(){
     // Remove all existing rules of any previous TPUL version.
 
     var styleSheet = style.sheet;
-    Array.from(styleSheet.cssRules).forEach(rule => styleSheet.deleteRule(rule))
+    Array.from(styleSheet.cssRules).forEach(rule => styleSheet.deleteRule(rule));
 
     // THE SETTINGS MENU BUTTONS
 
@@ -495,7 +512,7 @@ padding: 4px .5em;
 
 
     /*
-    
+
     //Bad design notice:
 
     styleSheet.insertRule(` .tpul-settings-frame > div::after {
@@ -601,8 +618,11 @@ transform: translateY(100%);
         last_opened = null,
         rollingChatEnabled = false;
 
+
+    // THE TPUL OBJECT!!
+
     var tpul = {
-        get version(){return version},
+        get version(){return version;},
 
         settings: {
             addSettings: function({id, title, fields, icon, tooltipText, buttonText}) {
@@ -770,7 +790,7 @@ transform: translateY(100%);
 
                             //close the settings in our way (animated)
                             this.frame.style.display = '';
-                            document.body.classList.remove('tpul-settings-shown')
+                            document.body.classList.remove('tpul-settings-shown');
 
                             if (this.events && typeof this.events.close == "function")
                                 this.events.close.call(this,...arguments);
@@ -827,7 +847,7 @@ transform: translateY(100%);
 
                 return button;
             },
-            get parent() {return SettingsMenu.parentElement},
+            get parent() {return SettingsMenu.parentElement;},
             set parent(container) {
 
                 if (container) console.warn('You are repositioning the tpul settings menu. This will affect all settings buttons, not only for your script!');
@@ -952,7 +972,7 @@ transform: translateY(100%);
                                     // (ball spin, respawn warnings and video settings are NOT stored on the TP server,
                                     //     only in a cookie on your device)
                                     for (var setting in profile.settings) {
-                                        match = RegExp('<input(?: [^>]*)? id="' +setting+ '"(?: [^>]*)? (checked)?', 'i').exec(this.responseText);;
+                                        match = RegExp('<input(?: [^>]*)? id="' +setting+ '"(?: [^>]*)? (checked)?', 'i').exec(this.responseText);
                                         if (match) {
                                             profile.settings[setting] = Boolean(match[1]);
                                         } else return reject({error:"unknown error", request:this});
@@ -970,7 +990,7 @@ transform: translateY(100%);
                                     var teamNamesOptions = /<select(?: [^>]*)? id="teamNames"(?: [^>]*)?>((?:\s*?.*?)*?)<\/select>/i.exec(this.responseText);
                                     if (teamNamesOptions) {
                                         var teamNamesOpt_rgx = /<option(?: [^>]*)? value="([^>]*)"(?: [^>]*)? (selected)?(?: [^>]*)?>/ig;
-                                        while (match = teamNamesOpt_rgx.exec(teamNamesOptions[1]) ){
+                                        while ( (match = teamNamesOpt_rgx.exec(teamNamesOptions[1])) ){
 
                                             if (match[2]) {
                                                 profile.settings.teamNames = match[1];
@@ -981,21 +1001,21 @@ transform: translateY(100%);
 
                                     // Get both names
                                     for (var name of ['reservedName','displayedName']) {
-                                        match = RegExp('<input(?: [^>]*)? id="' +name+ '"(?: [^>]*)? value="(.*?)"', 'i').exec(this.responseText);;
+                                        match = RegExp('<input(?: [^>]*)? id="' +name+ '"(?: [^>]*)? value="(.*?)"', 'i').exec(this.responseText);
                                         if (match) {
                                             profile[name] = match[1];
                                         } else return reject({error:"unknown error", request:this});
                                     }
 
                                     // Get your email
-                                    match = /<span(?: [^>]*)? class="hidden-email"(?: [^>]*)?>[^<]*?\b([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\b<\/span>/i.exec(this.responseText);;
+                                    match = /<span(?: [^>]*)? class="hidden-email"(?: [^>]*)?>[^<]*?\b([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})\b<\/span>/i.exec(this.responseText);
                                     if (match) {
                                         profile.email = match[1];
                                     } else return reject({error:"unknown error", request:this});
 
                                     // Get all flairs, and whether they are available, and which one is selected
                                     var flair_rgx = /<li class="(.*?)" data-flair="(.*?)">/ig;
-                                    while (match = flair_rgx.exec(this.responseText)) {
+                                    while ( (match = flair_rgx.exec(this.responseText)) ) {
                                         var i = profile.flair.push({
                                             id: match[2],
                                             selected: match[1].includes('selected'),
@@ -1125,7 +1145,7 @@ transform: translateY(100%);
                                                     resolve (tagpro.players[tagpro.playerId].name);
                                                 } else fallback();
 
-                                            };
+                                            }
                                         });
 
                                     }
@@ -1203,7 +1223,7 @@ transform: translateY(100%);
 
                                                 resolve (tagpro.players[tagpro.playerId].name);
 
-                                            };
+                                            }
                                         });
 
                                     }
@@ -1274,7 +1294,7 @@ transform: translateY(100%);
                                 if (tagpro.socket && tagpro.socket.on) {
 
                                     tagpro.socket.on('settings', function(settings) {
-                                        resolve({...settings.ui, stats: settings.stats});
+                                        resolve(Object.assign(settings.ui, {stats:settings.stats}));
                                     });
 
                                 } else fallback();
@@ -1365,10 +1385,12 @@ transform: translateY(100%);
                                                            //...newSettings}));
                                                           }));
                                         var req = GM_xmlhttpRequest({
-                                            data: param({...settings, // The current settings
-                                                   reservedName: reservedName, // Your reservedName
-                                                   displayedName: displayedName,  // Your displayedName
-                                                   ...newSettings}), // Overwrite with the settings that you want to edit.
+                                            data: param(Object.assign({},
+                                                                      settings, // The current settings
+                                                                      {reservedName: reservedName, // Your reservedName
+                                                                       displayedName: displayedName},  // Your displayedName
+                                                                      newSettings // Overwrite with the settings that you want to edit.
+                                                                     )),
                                             method: "POST",
                                             headers: {"Content-Type": "application/x-www-form-urlencoded"},
                                             url: "http://"+document.location.hostname+"/profile/update",
@@ -1457,7 +1479,7 @@ transform: translateY(100%);
                                 if (!releasing && (event.ctrlKey || event.shiftKey || event.altKey || event.metaKey)) return;
 
                                 // The key that is pressed/released (undefined when it is any other key)
-                                var arrow = ['left','up','right','down'][[37,38,39,40].indexOf(event.keyCode)]
+                                var arrow = ['left','up','right','down'][[37,38,39,40].indexOf(event.keyCode)];
 
                                 // Only if the controls are disabled (usually while composing a message)
                                 // AND the key is indeed an arrow (not undefined)
@@ -1475,11 +1497,11 @@ transform: translateY(100%);
                                     // Not necesarry, but useful for other scripts to 'hook onto'
                                     if (!releasing && tagpro.events.keyDown) tagpro.events.keyDown.forEach(f => f.keyDown(arrow));
                                     if (releasing && tagpro.events.keyUp) tagpro.events.keyUp.forEach(f => f.keyUp(arrow));
-                                    tagpro.ping.avg&&setTimeout(()=>(tagpro.players[tagpro.playerId][arrow]=!releasing),tagpro.ping.avg/2);
+                                    if(tagpro.ping.avg)setTimeout(()=>(tagpro.players[tagpro.playerId][arrow]=!releasing),tagpro.ping.avg/2);
                                 }
-                            }
+                            };
                         }
-                    }
+                    };
 
                     // intercept all key presses and releases:
                     document.addEventListener('keydown', tagpro.rollingChat.handler);
@@ -1518,7 +1540,7 @@ transform: translateY(100%);
             }, timeout, notification);
 
             // Hide on click
-            notification.onclick = function(){ this.classList.add('vanish'); }
+            notification.onclick = function(){ this.classList.add('vanish'); };
 
             // Clear up the DOM once the notification is vanished
             notification.addEventListener('transitionend',function(){ this.remove(); });
@@ -1526,6 +1548,99 @@ transform: translateY(100%);
             // Return the element, for scripters to "play" with
             return notification;
 
+        },
+
+        groupcomm: {
+
+            emit: function ( script, command, ...args ) {
+                if (tagpro && tagpro.group && tagpro.group.socket && tagpro.group.socket.connected) {
+
+                    var full_command = "/" + [...arguments].map(a=>(a||"").replace(/([\^\/:;])/g,"^$1")).join("/") + ";";
+
+                    tagpro.group.socket.emit( "touch", full_command.substr( 0,12 ) );
+                    for (var i = 12; i < full_command.length; i += 11) {
+                        tagpro.group.socket.emit( "touch", ":" + full_command.substr( i,11 ) );
+                    }
+
+                    tagpro.group.socket.emit( "touch", tagpro.group.socket.playerLocation );
+                }
+                else throw "Not connected to a group";
+            },
+
+            oncommand: function oncommand( callback ) {
+                if (tagpro && tagpro.group && tagpro.group.socket && tagpro.group.socket.connected) {
+                    if (!tpul.groupcomm._active) tpul.groupcomm._init();
+                    tpul.groupcomm._callbacks.push(callback);
+                }
+                else throw "Not connected to a group";
+            },
+
+            _callbacks: [],
+
+            _commands: {},
+
+            _active: false,
+
+            _init: function (){
+
+                if (tpul.groupcomm._active) return;
+
+                tpul.groupcomm._active = true;
+
+                tagpro.group.socket.on( "member", function(member) {
+
+                    function handleCommand(command){
+                        var args = [...command.slice(1,1+command.search(/[^^];/)).split(/(?<=[^^])\//).map(a=>a.replace(/\^(.)/g, "$1"))];
+
+                        for (var c in tpul.groupcomm._callbacks) {
+                            var callback = tpul.groupcomm._callbacks[c];
+                            try { callback({
+                                member: member,
+                                script: args.shift() || null,
+                                command: args.shift() || null,
+                                args: args,
+                                raw:command } ); }
+                            catch(e) {
+                                console.error("Unhandled GroupComm error. Mod makers, handle your errors!", e);
+                                tpul.groupcomm._callbacks.splice(c,1);
+                            }
+                        }
+                    }
+
+                    var raw = member.location,
+                        commands = tpul.groupcomm._commands;
+
+                    if (typeof raw !== "string") return;
+
+                    // A full one-line command:  / ... ;
+                    if ( raw.match(/^\/.*[^^];/) ) {
+                        handleCommand( raw );
+                        delete commands[member.id];
+                    }
+
+                    // The start of a multi-line command:  / ...
+                    else if ( raw.match(/^\//) ) {
+                        commands[member.id] = raw;
+                    }
+
+                    // The end of a multi-line command:  : ... ;
+                    else if ( raw.match(/^:.*[^^];/) ) {
+                        if (!commands[member.id]) throw "Did not receive start of command.";
+                        var com = commands[member.id] + raw.slice(1);
+                        handleCommand( com );
+                        delete commands[member.id];
+                    }
+
+                    // A middle part of a multi-line command:  : ...
+                    else if ( raw.match(/^:/) ) {
+                        if (!commands[member.id]) throw "Did not receive start of command.";
+                        commands[member.id] += raw.slice(1);
+                    }
+
+                    // Not a GroupComm command:
+                    else delete commands[member.id];
+                });
+            }
         }
     };
 
@@ -1542,7 +1657,7 @@ transform: translateY(100%);
         // Close all settings when clicking outside the panel
         if (SettingsFrame == click.target) for (var settings of all_settings) settings.close();
 
-    }
+    };
 
     SettingsFrame.addEventListener('scroll', function(wheel) {
 
@@ -1553,7 +1668,7 @@ transform: translateY(100%);
         setTimeout(function(){
             if (SettingsFrame.firstElementChild &&
                 SettingsFrame.scrollTop + SettingsFrame.offsetHeight <= SettingsFrame.firstElementChild.offsetTop + 20)
-                for (var settings of all_settings) settings.close()
+                for (var settings of all_settings) settings.close();
         },200);
     });
 
@@ -1565,14 +1680,20 @@ transform: translateY(100%);
     SettingsFrame.addEventListener('click', function(click) {
         var tablist = click.target.parentElement;
         if (tablist.classList.contains('tab-list')) {
+
+            var scrollTop = SettingsFrame.scrollTop;
+            console.log(scrollTop);
+
             for (let li of tablist.getElementsByTagName('li'))
                 li.classList.remove('active');
             for (let pane of tablist.parentElement.getElementsByClassName('tab-pane'))
                 pane.classList.remove('active');
             click.target.classList.add('active');
             document.querySelector(click.target.dataset.target).classList.add('active');
+
+            SettingsFrame.scrollTop = scrollTop;
         }
-    });
+    }, true);
 
 
 
@@ -1584,7 +1705,7 @@ transform: translateY(100%);
                 tagpro.socket.on('settings', function(settings) {
                     // Don't try to tamper with this, or copy this in your own script.
                     // It will affect all scripts using TPUL.
-                    tpul.profile.getSettings( {__settings:{...settings.ui, stats: settings.stats}} );
+                    tpul.profile.getSettings( {__settings:Object.assign(settings.ui, {stats: settings.stats})} );
                 });
             }
         });
@@ -1595,7 +1716,7 @@ transform: translateY(100%);
     function param(o){
 
         return Object.keys(o).map(function(k) {
-            return encodeURIComponent(k) + '=' + encodeURIComponent(o[k.replace(' ','+')])
+            return encodeURIComponent(k) + '=' + encodeURIComponent(o[k.replace(' ','+')]);
         }).join('&').replace(/%20/g, '+');
     }
 
@@ -1618,5 +1739,3 @@ transform: translateY(100%);
 
     return tpul;
 })();
-
-
