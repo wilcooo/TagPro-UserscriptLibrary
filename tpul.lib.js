@@ -21,12 +21,12 @@
 // ==UserLibrary==
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
-// @version      3.0
+// @version      3.1
 // @license      MIT
 // ==/UserLibrary==
 
 
-var version = 3.0;
+var version = 3.1;
 console.log('Loading TPUL (TagPro Userscript Library) version '+version);
 
 
@@ -1594,7 +1594,7 @@ transform: translateY(100%);
                                     .replace(/\^(.)/g, "$1^")
                                     .match(/\/(.*);(?=(?:\^\^)*(?!\^))/,1)[1]
                                     .split(/\/(?=(?:\^\^)*(?!\^))/)
-                                    .map(a=>a.replace(/\(.)\^(?=(?:\^\^)*(?!\^))/g, "$1"))
+                                    .map(a=>a.replace(/(.)\^(?=(?:\^\^)*(?!\^))/g, "$1"))
                                    ];
 
                         for (var c in tpul.groupcomm._callbacks) {
