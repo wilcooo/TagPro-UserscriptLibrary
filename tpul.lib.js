@@ -2,7 +2,7 @@
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
 // @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
-// @version      3.1
+// @version      3.2
 // @license      MIT
 // @include      *.koalabeast.com*
 // @include      *.jukejuice.com*
@@ -21,12 +21,12 @@
 // ==UserLibrary==
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
-// @version      3.1
+// @version      3.2
 // @license      MIT
 // ==/UserLibrary==
 
 
-var version = 3.1;
+var version = 3.2;
 console.log('Loading TPUL (TagPro Userscript Library) version '+version);
 
 
