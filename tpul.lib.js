@@ -2,7 +2,7 @@
 // @name         TagPro Userscript Library
 // @description  Functions that any TagPro script could benefit from
 // @author       Ko </u/Wilcooo> (https://greasyfork.org/users/152992)
-// @version      3.0
+// @version      3.1
 // @license      MIT
 // @include      *.koalabeast.com*
 // @include      *.jukejuice.com*
@@ -1590,7 +1590,12 @@ transform: translateY(100%);
                 tagpro.group.socket.on( "member", function(member) {
 
                     function handleCommand(command){
-                        var args = [...command.slice(1,1+command.search(/[^^];/)).split(/(?<=[^^])\//).map(a=>a.replace(/\^(.)/g, "$1"))];
+                        var args = [...command
+                                    .replace(/\^(.)/g, "$1^")
+                                    .match(/\/(.*);(?=(?:\^\^)*(?!\^))/,1)[1]
+                                    .split(/\/(?=(?:\^\^)*(?!\^))/)
+                                    .map(a=>a.replace(/\(.)\^(?=(?:\^\^)*(?!\^))/g, "$1"))
+                                   ];
 
                         for (var c in tpul.groupcomm._callbacks) {
                             var callback = tpul.groupcomm._callbacks[c];
